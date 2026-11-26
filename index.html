@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>华衡订单变更 · 影响核对台</title>
+  <meta name="description" content="制造业订单变更影响的只读核对 Demo，展示版本冲突、数量缺口和人工放行关卡。">
+  <style>
+    :root{--ink:#0b1220;--panel:#111b2d;--panel2:#17243a;--line:#2b3b54;--muted:#8fa3bc;--text:#edf5ff;--mint:#63e6be;--amber:#ffd166;--red:#ff6b6b;--blue:#74c0fc;--white:#fff}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:radial-gradient(circle at 85% 5%,#1f3654 0,transparent 35%),var(--ink);color:var(--text);font:15px/1.55 Inter,"PingFang SC","Microsoft YaHei",sans-serif}
+    button,a{font:inherit}
+    button{color:inherit}
+    .shell{min-height:100vh;max-width:1500px;margin:auto;padding:24px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:26px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid #42617e;border-radius:12px;background:linear-gradient(145deg,#203957,#102035);color:var(--mint);font-weight:900}
+    .brand strong{display:block;font-size:18px}
+    .brand small{color:var(--muted)}
+    .mode{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #33506c;border-radius:999px;color:#b9cbe0;background:#12243a}
+    .mode i{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 14px var(--mint)}
+    .hero{display:grid;grid-template-columns:1.4fr .8fr;gap:22px;align-items:end;margin-bottom:24px}
+    .eyebrow{margin:0 0 8px;color:var(--mint);font-size:12px;font-weight:800;letter-spacing:.16em}
+    h1{margin:0;font-size:clamp(32px,5vw,66px);line-height:1.03;letter-spacing:-.04em;max-width:900px}
+    h1 em{color:var(--amber);font-style:normal}
+    .lede{max-width:760px;color:#b9c8d9;font-size:17px}
+    .boundary{padding:18px;border:1px solid #3a4a61;border-radius:16px;background:rgba(17,27,45,.82)}
+    .boundary span{color:var(--amber);font-weight:800}
+    .boundary p{margin:6px 0 0;color:var(--muted)}
+    .workspace{display:grid;grid-template-columns:280px 1fr;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:rgba(12,20,34,.92);box-shadow:0 28px 70px rgba(0,0,0,.3)}
+    .rail{padding:18px;background:#0f192a;border-right:1px solid var(--line)}
+    .railHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#b4c4d8}
+    .railHead b{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:#20324a;color:var(--mint)}
+    .changeBtn{width:100%;text-align:left;border:1px solid transparent;border-radius:14px;background:transparent;padding:14px;margin:0 0 9px;cursor:pointer;transition:.2s}
+    .changeBtn:hover,.changeBtn.active{background:#172840;border-color:#35516e;transform:translateY(-1px)}
+    .changeBtn small,.changeBtn span{display:block;color:var(--muted)}
+    .changeBtn strong{display:block;margin:4px 0;font-size:15px}
+    .changeBtn .state{display:inline-block;margin-top:8px;padding:3px 8px;border-radius:999px;font-size:12px;color:var(--amber);background:#3a321e}
+    .railFoot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+    .main{padding:22px}
+    .caseHead{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+    .caseHead h2{margin:2px 0 5px;font-size:27px}
+    .caseHead p{margin:0;color:var(--muted)}
+    .gate{padding:9px 12px;border-radius:10px;font-weight:800;border:1px solid}
+    .gate.hold{color:#ffd9d9;background:#3a2026;border-color:#87414b}
+    .gate.ready{color:#c8ffe9;background:#12362f;border-color:#29695b}
+    .deltaGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+    .delta{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+    .delta small{color:var(--muted)}
+    .delta div{display:flex;align-items:center;gap:8px;margin-top:8px}
+    .delta del{color:#8fa3bc}.delta strong{color:var(--white);font-size:18px}.delta i{color:var(--amber);font-style:normal}
+    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+    .filter{padding:12px;border:1px solid var(--line);border-radius:12px;background:#121e31;cursor:pointer;text-align:left}
+    .filter.active{outline:2px solid var(--mint);border-color:transparent}
+    .filter span{display:block;color:var(--muted);font-size:12px}.filter b{font-size:24px}
+    .content{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+    .matrix,.detail{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
+    .matrixTitle{display:flex;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--line)}
+    .matrixTitle span{color:var(--muted)}
+    .impactRow{width:100%;display:grid;grid-template-columns:34px minmax(160px,1.2fr) minmax(150px,.9fr) 100px 26px;gap:10px;align-items:center;text-align:left;border:0;border-bottom:1px solid #223149;background:transparent;padding:14px 16px;cursor:pointer}
+    .impactRow:hover,.impactRow.active{background:#192b43}
+    .icon{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;font-weight:900}
+    .icon.ok{color:var(--mint);background:#17372f}.icon.warn{color:var(--amber);background:#3b321d}.icon.bad{color:#ff9b9b;background:#3e2229}
+    .itemName strong,.itemName small{display:block}.itemName small{color:var(--muted)}
+    .systems{color:#b7c8dc;font-size:13px}
+    .pill{justify-self:start;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}
+    .pill.ok{color:#b7ffe4;background:#183a31}.pill.warn{color:#ffe8a6;background:#3d331d}.pill.bad{color:#ffc1c1;background:#41242a}
+    .detail{padding:18px}
+    .detailTop{display:flex;gap:10px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+    .detail h3{margin:0;font-size:20px}.detailTop small{color:var(--muted)}
+    dl{margin:0}dl div{padding:13px 0;border-bottom:1px solid #223149}
+    dt{color:var(--muted);font-size:12px;margin-bottom:4px}dd{margin:0}
+    code{color:#a8d8ff;background:#0b1626;border:1px solid #283b55;border-radius:6px;padding:2px 6px}
+    .human{margin-top:15px;padding:13px;border-left:3px solid var(--amber);background:#2b281c;color:#f4e7b7}
+    .versionStrip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+    .systemCard{padding:12px;border:1px solid var(--line);border-radius:12px;background:#111d30}
+    .systemCard b,.systemCard small{display:block}.systemCard small{color:var(--muted)}
+    .systemCard .old{color:var(--red)}.systemCard .new{color:var(--mint)}
+    footer{display:flex;justify-content:space-between;gap:16px;color:var(--muted);padding:22px 4px 6px;font-size:13px}
+    footer a{color:var(--blue)}
+    @media(max-width:980px){.hero{grid-template-columns:1fr}.workspace{grid-template-columns:1fr}.rail{border-right:0;border-bottom:1px solid var(--line)}.caseList{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.content{grid-template-columns:1fr}.versionStrip{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:680px){.shell{padding:14px}.topbar,.caseHead,footer{align-items:flex-start;flex-direction:column}.caseList,.deltaGrid,.summary{grid-template-columns:1fr}.main{padding:14px}.impactRow{grid-template-columns:32px 1fr 84px 20px}.systems{display:none}.versionStrip{grid-template-columns:1fr}.mode{font-size:12px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark">H</span><span><strong>华衡智造</strong><small>订单变更影响核对台 · 训练演示</small></span></div>
+      <div class="mode"><i></i>只读模式 · 不审批、不回写系统</div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">ORDER CHANGE IMPACT CHECK</p>
+        <h1>客户改了订单，<em>现场还在按旧版做。</em></h1>
+        <p class="lede">把 ERP、MES、WMS 与 CRM 的版本放到同一张影响清单里。系统只指出差异、缺口与风险，不替计划员做放行决定。</p>
+      </div>
+      <aside class="boundary"><span>本次只解决一个问题</span><p>一次订单变更，到底影响了哪些系统、批次和责任人？</p></aside>
+    </section>
+
+    <section class="workspace" aria-label="订单变更影响核对工作区">
+      <aside class="rail">
+        <div class="railHead"><span>模拟变更单</span><b>3</b></div>
+        <div class="caseList" id="caseList"></div>
+        <div class="railFoot">规则快照 OC-2026.11<br>所有企业、订单与批次均为合成数据</div>
+      </aside>
+
+      <section class="main">
+        <div class="caseHead">
+          <div><p class="eyebrow" id="changeId"></p><h2 id="caseTitle"></h2><p id="caseMeta"></p></div>
+          <span class="gate hold" id="gate"></span>
+        </div>
+
+        <div class="deltaGrid" id="deltaGrid"></div>
+
+        <div class="summary">
+          <button class="filter active" data-filter="all"><span>全部影响项</span><b id="allCount">0</b></button>
+          <button class="filter" data-filter="ok"><span>已对齐</span><b id="okCount">0</b></button>
+          <button class="filter" data-filter="bad"><span>版本冲突</span><b id="badCount">0</b></button>
+          <button class="filter" data-filter="warn"><span>人工确认</span><b id="warnCount">0</b></button>
+        </div>
+
+        <div class="content">
+          <div>
+            <section class="matrix">
+              <div class="matrixTitle"><strong>影响清单</strong><span>点击项目查看判断依据</span></div>
+              <div id="impactList"></div>
+            </section>
+            <div class="versionStrip" id="versionStrip"></div>
+          </div>
+          <aside class="detail" id="detail" aria-live="polite"></aside>
+        </div>
+      </section>
+    </section>
+
+    <footer>
+      <span>华衡订单变更影响核对台 · FDE 小切口 Demo</span>
+      <a href="https://github.com/sonnyboy061117-cmd/huaheng-order-change-impact-demo">查看完整项目资料 ↗</a>
+    </footer>
+  </main>
+
+  <script>
+    const cases = [
+      {
+        id:'OC-2026-0421', order:'SO-88421', customer:'远帆电器', owner:'计划员 · 李澄', status:'暂缓放行', gate:'hold',
+        meta:'客户确认版 V7 · 变更时间 11-26 09:12',
+        deltas:[['订单数量','1200','1100'],['交付日期','12-08','12-05'],['包装要求','标准箱','防潮箱']],
+        systems:[['ERP','V7','09:14','new'],['MES','V6','09:02','old'],['WMS','V6','08:56','old'],['CRM','V7','09:12','new']],
+        impacts:[
+          {name:'排产工单数量',source:'MES · MO-3371',systems:'ERP V7 ↔ MES V6',state:'bad',label:'版本冲突',evidence:'ERP 已改为 1100 件，MES 仍按 1200 件排产。',rule:'OC-ROUTE-01 §2.1',next:'计划员确认是否撤回或改写 MO-3371。'},
+          {name:'可发库存口径',source:'WMS · LOT-F19',systems:'WMS V6 · 冻结批次',state:'warn',label:'人工确认',evidence:'可用量 1120 件中包含冻结批次 80 件。',rule:'SHIP-GATE-03 §1.4',next:'仓储主管确认冻结批次不可计入可发数量。'},
+          {name:'客户交期',source:'CRM · CR-5512',systems:'CRM V7 ↔ ERP V7',state:'ok',label:'已对齐',evidence:'客户确认交期与 ERP 批准版均为 12-05。',rule:'OC-CHECK-02 §3.2',next:'无需处理，保留版本与时间戳。'},
+          {name:'包装物料',source:'BOM · PKG-09',systems:'ERP V7 ↔ MES V6',state:'bad',label:'版本冲突',evidence:'客户要求防潮箱，工单领料仍为标准箱。',rule:'BOM-CHECK-04 §2.6',next:'工艺员确认替代物料和领料影响。'}
+        ]
+      },
+      {
+        id:'OC-2026-0427', order:'SO-88427', customer:'拓海设备', owner:'跟单员 · 周衡', status:'可进入人工放行', gate:'ready',
+        meta:'客户确认版 V4 · 变更时间 11-26 10:05',
+        deltas:[['订单数量','600','640'],['交付日期','12-14','12-14'],['包装要求','木架','木架']],
+        systems:[['ERP','V4','10:08','new'],['MES','V4','10:16','new'],['WMS','V4','10:20','new'],['CRM','V4','10:05','new']],
+        impacts:[
+          {name:'排产工单数量',source:'MES · MO-3399',systems:'ERP V4 ↔ MES V4',state:'ok',label:'已对齐',evidence:'ERP 与 MES 均为 640 件。',rule:'OC-ROUTE-01 §2.1',next:'进入人工放行。'},
+          {name:'可发库存口径',source:'WMS · LOT-K22',systems:'WMS V4',state:'ok',label:'已对齐',evidence:'现货 220 件，均为可用未冻结批次。',rule:'SHIP-GATE-03 §1.4',next:'记录缺口 420 件，由计划员确认。'},
+          {name:'客户交期',source:'CRM · CR-5588',systems:'CRM V4 ↔ ERP V4',state:'ok',label:'已对齐',evidence:'交期未变化，四系统时间戳完整。',rule:'OC-CHECK-02 §3.2',next:'无需处理。'},
+          {name:'增量产能',source:'APS · CAP-18',systems:'APS 快照',state:'warn',label:'人工确认',evidence:'新增 40 件需要占用 12-09 夜班产能。',rule:'CAP-CHECK-02 §4.1',next:'生产主管确认夜班产能。'}
+        ]
+      },
+      {
+        id:'OC-2026-0430', order:'SO-88430', customer:'澄明科技', owner:'业务员 · 陈望', status:'暂缓放行', gate:'hold',
+        meta:'客户口头变更 · 尚无批准版本',
+        deltas:[['订单数量','300','待确认'],['交付日期','12-20','12-16'],['包装要求','标准箱','待确认']],
+        systems:[['ERP','V2','11:02','old'],['MES','V2','10:50','old'],['WMS','V2','10:44','old'],['CRM','草稿','11:18','old']],
+        impacts:[
+          {name:'批准版本',source:'CRM · CALL-771',systems:'仅有沟通记录',state:'bad',label:'版本冲突',evidence:'存在提前交付口头要求，但没有客户确认版。',rule:'OC-AUTH-01 §1.1',next:'跟单员取得书面确认，批准前不得传播。'},
+          {name:'排产窗口',source:'MES · MO-3410',systems:'MES V2',state:'warn',label:'人工确认',evidence:'提前 4 天可能与设备检修窗口冲突。',rule:'CAP-CHECK-02 §4.1',next:'生产主管评估可行性。'},
+          {name:'订单数量',source:'ERP · SO-88430',systems:'ERP V2 ↔ CRM 草稿',state:'bad',label:'版本冲突',evidence:'沟通记录未说明数量是否同步变化。',rule:'OC-CHECK-05 §2.2',next:'数量保持空缺，不得沿用猜测值。'},
+          {name:'在库成品',source:'WMS · LOT-M08',systems:'WMS V2',state:'ok',label:'已对齐',evidence:'在库 120 件，冻结数量为 0。',rule:'SHIP-GATE-03 §1.4',next:'只作影响参考，不代表可直接发货。'}
+        ]
+      }
+    ];
+
+    let activeCase = 0;
+    let activeFilter = 'all';
+    let activeImpact = 0;
+
+    const el = function(id){ return document.getElementById(id); };
+
+    function renderCases(){
+      el('caseList').innerHTML = cases.map(function(item,index){
+        return '<button class="changeBtn '+(index===activeCase?'active':'')+'" data-case="'+index+'"><small>'+item.id+'</small><strong>'+item.order+' · '+item.customer+'</strong><span>'+item.owner+'</span><span class="state">'+item.status+'</span></button>';
+      }).join('');
+      document.querySelectorAll('[data-case]').forEach(function(button){
+        button.addEventListener('click',function(){ activeCase=Number(button.dataset.case); activeFilter='all'; activeImpact=0; render(); });
+      });
+    }
+
+    function renderHeader(item){
+      el('changeId').textContent=item.id;
+      el('caseTitle').textContent=item.order+' · '+item.customer;
+      el('caseMeta').textContent=item.meta;
+      el('gate').textContent=item.status;
+      el('gate').className='gate '+item.gate;
+      el('deltaGrid').innerHTML=item.deltas.map(function(delta){
+        return '<article class="delta"><small>'+delta[0]+'</small><div><del>'+delta[1]+'</del><i>→</i><strong>'+delta[2]+'</strong></div></article>';
+      }).join('');
+    }
+
+    function renderSummary(item){
+      const counts={ok:0,bad:0,warn:0};
+      item.impacts.forEach(function(impact){ counts[impact.state]++; });
+      el('allCount').textContent=item.impacts.length;
+      el('okCount').textContent=counts.ok;
+      el('badCount').textContent=counts.bad;
+      el('warnCount').textContent=counts.warn;
+      document.querySelectorAll('.filter').forEach(function(button){
+        button.classList.toggle('active',button.dataset.filter===activeFilter);
+        button.onclick=function(){ activeFilter=button.dataset.filter; activeImpact=0; renderImpacts(item); renderSummary(item); };
+      });
+    }
+
+    function renderImpacts(item){
+      const visible=item.impacts.filter(function(impact){ return activeFilter==='all'||impact.state===activeFilter; });
+      if(!visible.length){ el('impactList').innerHTML='<p style="padding:18px;color:#8fa3bc">当前筛选没有影响项。</p>'; return; }
+      if(activeImpact>=visible.length){ activeImpact=0; }
+      el('impactList').innerHTML=visible.map(function(impact,index){
+        const symbol=impact.state==='ok'?'✓':impact.state==='bad'?'!':'?';
+        return '<button class="impactRow '+(index===activeImpact?'active':'')+'" data-impact="'+index+'"><span class="icon '+impact.state+'">'+symbol+'</span><span class="itemName"><strong>'+impact.name+'</strong><small>'+impact.source+'</small></span><span class="systems">'+impact.systems+'</span><span class="pill '+impact.state+'">'+impact.label+'</span><span>→</span></button>';
+      }).join('');
+      document.querySelectorAll('[data-impact]').forEach(function(button){
+        button.addEventListener('click',function(){ activeImpact=Number(button.dataset.impact); renderImpacts(item); });
+      });
+      renderDetail(visible[activeImpact]);
+    }
+
+    function renderDetail(impact){
+      const symbol=impact.state==='ok'?'✓':impact.state==='bad'?'!':'?';
+      el('detail').innerHTML='<div class="detailTop"><span class="icon '+impact.state+'">'+symbol+'</span><div><small>判断详情</small><h3>'+impact.name+'</h3></div></div><dl><div><dt>判断结果</dt><dd><span class="pill '+impact.state+'">'+impact.label+'</span></dd></div><div><dt>证据</dt><dd>'+impact.evidence+'</dd></div><div><dt>规则依据</dt><dd><code>'+impact.rule+'</code></dd></div><div><dt>下一步</dt><dd>'+impact.next+'</dd></div></dl><div class="human"><strong>人工关卡</strong><br>系统只列出影响，不审批、不自动回写，也不替责任人确认。</div>';
+    }
+
+    function renderVersions(item){
+      el('versionStrip').innerHTML=item.systems.map(function(system){
+        return '<article class="systemCard"><small>'+system[0]+'</small><b class="'+system[3]+'">'+system[1]+'</b><small>更新 '+system[2]+'</small></article>';
+      }).join('');
+    }
+
+    function render(){
+      const item=cases[activeCase];
+      renderCases();
+      renderHeader(item);
+      renderSummary(item);
+      renderImpacts(item);
+      renderVersions(item);
+    }
+
+    render();
+  </script>
+</body>
+</html>
