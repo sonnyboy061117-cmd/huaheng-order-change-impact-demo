@@ -7,7 +7,10 @@
 ## 在线体验
 
 - [公开 Demo](https://sonnyboy061117-cmd.github.io/huaheng-order-change-impact-demo/)
-- [目标仓库初始化 Issue](https://github.com/gaojiayi0625/FDE/issues/1)
+- [完整暂存仓库](https://github.com/sonnyboy061117-cmd/huaheng-order-change-impact-demo)
+- [目标仓库初始化 Issue #1](https://github.com/gaojiayi0625/FDE/issues/1)
+
+[![华衡订单变更影响核对台在线截图](docs/evidence/demo-online.png)](https://sonnyboy061117-cmd.github.io/huaheng-order-change-impact-demo/)
 
 ## Demo 能做什么
 
@@ -34,11 +37,19 @@
 - `prompts/华衡订单变更项目主提示词.md`：项目提示词
 - `ai-collaboration/AI协作记录.md`：脱敏 AI 协作记录
 - `deliverables/huaheng-order-change.zip`：原始案例资料包
-- `docs/evidence/`：Issue 与 PR 公开证据
+- `docs/evidence/`：Issue、PR 与在线站点证据
 
-## 目标仓库说明
+## 目标仓库贡献状态
 
-计划通过 Pull Request 提交到 [gaojiayi0625/FDE](https://github.com/gaojiayi0625/FDE)。该仓库当前没有任何 Git 提交，GitHub 不允许 fork 空仓库；已创建 [Issue #1](https://github.com/gaojiayi0625/FDE/issues/1)，请求仓库所有者先添加 README。目标仓库出现首个提交后即可创建 fork 和 PR。
+目标：[gaojiayi0625/FDE](https://github.com/gaojiayi0625/FDE)
+
+该仓库当前没有任何 Git 提交或 `main` 分支，GitHub 明确禁止 fork 空仓库，因此暂时无法创建 Pull Request。已提交初始化请求：
+
+[Issue #1：初始化 main 分支以接收华衡订单变更 Demo](https://github.com/gaojiayi0625/FDE/issues/1)
+
+[![目标仓库 Issue #1 截图](docs/evidence/target-issue-1.png)](https://github.com/gaojiayi0625/FDE/issues/1)
+
+仓库所有者只需点击 **Add a README** 完成首个提交。之后即可 fork、创建功能分支并提交完整 PR。
 
 ## 数据说明
 
